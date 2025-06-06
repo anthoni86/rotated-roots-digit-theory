@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Rotated Circle Perfect Square Checker (10 to 10^20)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input {
+      font-size: 16px;
+      padding: 6px;
+      width: 300px;
+    }
+    button {
+      font-size: 16px;
+      padding: 6px 12px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    #output {
+      margin-top: 25px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 5px #bbb;
+      padding: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+      text-align: left;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔢 Rotated Circle Perfect Square Checker</h1>
+
+  <input type="text" id="inputNumber" placeholder="Enter max number (e.g., 100000000000000000000)" value="1000000000000" />
+  <button type="button" onclick="checkAll()">Check</button>
+
+  <div id="output">Enter a number ≥ 10 (default 10^12). For 10^20, use Node.js for better performance.</div>
+
+  <script>
+    // Check if a number is a perfect square
+    function isPerfectSquare(num) {
+      try {
+        if (num < 0n) return false;
+        const root = BigInt(Math.floor(Math.sqrt(Number(num))));
+        return root * root === num;
+      } catch (e) {
+        console.error("Error in isPerfectSquare:", e);
+        return false;
+      }
+    }
+
+    // Generate all rotations of digits as numbers, removing leading zeros
+    function getRotations(str) {
+      try {
+        const rotations = [];
+        for (let i = 0; i < str.length; i++) {
+          const rotated = str.slice(i) + str.slice(0, i);
+          const cleaned = rotated.replace(/^0+/, '') || '0';
+          rotations.push(BigInt(cleaned));
+        }
+        return rotations;
+      } catch (e) {
+        console.error("Error in getRotations:", e);
+        return [];
+      }
+    }
+
+    function checkAll() {
+      const output = document.getElementById("output");
+      let max;
+      try {
+        const input = document.getElementById("inputNumber").value.trim();
+        if (!/^\d+$/.test(input)) {
+          output.textContent = "⚠️ Invalid input. Please enter a positive integer (e.g., 100000000000000000000).";
+          return;
+        }
+        max = BigInt(input);
+        if (max < 10n) {
+          output.textContent = "⚠️ Please enter a number ≥ 10.";
+          return;
+        }
+      } catch (e) {
+        output.textContent = "⚠️ Invalid input. Please enter a number like 100000000000000000000.";
+        console.error("Error parsing input:", e);
+        return;
+      }
+
+      output.textContent = "Processing... Please wait.";
+      const startTime = Date.now();
+      const start = BigInt(Math.ceil(Math.sqrt(10))); // Start at ceil(sqrt(10)) = 4
+      const end = BigInt(Math.floor(Math.sqrt(Number(max)))); // End at floor(sqrt(max))
+      const totalSquares = end - start + 1n;
+      let result = `Total perfect squares (10 ≤ n ≤ ${max}): ${totalSquares.toString()}\n\n`;
+      let found = false;
+      let i = start;
+      const chunkSize = 1000n; // Process 1,000 squares at a time
+
+      function processChunk() {
+        try {
+          const chunkEnd = i + chunkSize < end ? i + chunkSize : end;
+          for (; i <= chunkEnd; i++) {
+            const sq = i * i;
+            if (sq >= 10n && sq <= max) {
+              const strNum = sq.toString();
+              const rotations = getRotations(strNum);
+              const allPerfect = rotations.every(r => isPerfectSquare(r));
+              if (allPerfect) {
+                result += `Number: ${sq} → Circle of number is perfect: ✅ YES\n`;
+                result += `Rotations: [${rotations.join(", ")}]\n`;
+                found = true;
+              }
+            }
+          }
+
+          // Update progress
+          const progress = Number((i - start) * 1000000n / totalSquares) / 10000; // Four decimal places
+          const elapsed = (Date.now() - startTime) / 1000; // Seconds
+          output.textContent = `Processing... ${progress.toFixed(4)}% complete (Elapsed: ${elapsed.toFixed(1)}s)\n${result}`;
+
+          if (i <= end) {
+            setTimeout(processChunk, 0); // Continue next chunk
+          } else {
+            if (!found) {
+              result += "No perfect squares found where all rotations are perfect squares.\n";
+            }
+            const totalTime = (Date.now() - startTime) / 1000;
+            result += `Total time: ${totalTime.toFixed(1)} seconds\n`;
+            output.textContent = result;
+          }
+        } catch (e) {
+          output.textContent = "Error during processing: " + e.message;
+          console.error("Error in processChunk:", e);
+        }
+      }
+
+      processChunk(); // Start processing
+    }
+  </script>
+
+</body>
+</html>
